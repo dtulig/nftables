@@ -546,6 +546,16 @@ nft_service_enabled: true
 # Path to store Nftables service.
 nft_service_unit_path: '/lib/systemd/system/nftables.service'
                                                                    # ]]]
+# .. envvar:: nft_openrc_path [[[
+#
+# Path to store Nftables openrc conf.
+nft_openrc_path: '/etc/conf.d/nftables'
+                                                                   # ]]]
+# .. envvar:: nft_service_unit_content [[[
+#
+# Template used to provide openrc conf for Nftables service.
+nft_openrc_content: 'etc/conf.d/nftables.j2'
+                                                                   # ]]]
 # .. envvar:: nft_service_unit_content [[[
 #
 # Template used to provide systemd unit for Nftables service.

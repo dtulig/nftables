@@ -94,7 +94,7 @@
     group: root
     mode: 0755
     backup: "{{ nft_backup_conf }}"
-  notify: ['Reload nftables service']
+  notify: ['Reload nftables service', 'Reload nftables openrc service']
   when: nft_enabled|bool
 
 - name: CONFIG generate vars definition file
@@ -105,7 +105,7 @@
     group: root
     mode: 0755
     backup: "{{ nft_backup_conf }}"
-  notify: ['Reload nftables service']
+  notify: ['Reload nftables service', 'Reload nftables openrc service']
   when: nft_enabled|bool
 
 - name: CONFIG generate sets file
@@ -116,7 +116,7 @@
     group: root
     mode: 0755
     backup: "{{ nft_backup_conf }}"
-  notify: ['Reload nftables service']
+  notify: ['Reload nftables service', 'Reload nftables openrc service']
   when: nft_enabled|bool
 
 # Filter table content [[[1
@@ -128,7 +128,7 @@
     group: root
     mode: 0755
     backup: "{{ nft_backup_conf }}"
-  notify: ['Reload nftables service']
+  notify: ['Reload nftables service', 'Reload nftables openrc service']
   when: nft_enabled|bool
 
 - name: Filter table - generate output rules file
@@ -139,7 +139,7 @@
     group: root
     mode: 0755
     backup: "{{ nft_backup_conf }}"
-  notify: ['Reload nftables service']
+  notify: ['Reload nftables service', 'Reload nftables openrc service']
   when: nft_enabled|bool
 
 - name: Filter table - generate forward rules file
@@ -150,7 +150,7 @@
     group: root
     mode: 0755
     backup: yes
-  notify: ['Reload nftables service']
+  notify: ['Reload nftables service', 'Reload nftables openrc service']
   when: (nft_enabled|bool and
          nft__forward_table_manage|bool)
 
@@ -163,7 +163,7 @@
     group: root
     mode: 0755
     backup: "{{ nft_backup_conf }}"
-  notify: ['Reload nftables service']
+  notify: ['Reload nftables service', 'Reload nftables openrc service']
   when: (nft_enabled|bool and
          nft__nat_table_manage|bool)
 
@@ -175,7 +175,7 @@
     group: root
     mode: 0755
     backup: "{{ nft_backup_conf }}"
-  notify: ['Reload nftables service']
+  notify: ['Reload nftables service', 'Reload nftables openrc service']
   when: (nft_enabled|bool and
          nft__nat_table_manage|bool)
 
@@ -189,7 +189,8 @@
     mode: '0644'
   register: nftables__register_systemd_service
   when: (nft_enabled|bool and
-         nft_service_manage|bool)
+         nft_service_manage|bool and
+         ansible_service_mgr == 'systemd')
   notify: ['Restart nftables service']
 
 - name: Ensure to remove nftables systemd service from old target
@@ -198,8 +199,22 @@
     state: absent
   register: nftables__register_fix_systemd_target
   when: (nft_enabled|bool and
-         nft_service_manage|bool)
+         nft_service_manage|bool and
+         ansible_service_mgr == 'systemd')
   notify: ['Restart nftables service']
+
+- name: Install nftables openrc conf
+  template:
+    src: '{{ nft_openrc_content }}'
+    dest: '{{ nft_openrc_path }}'
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
+  register: nftables__register_openrc_service
+  when: (nft_enabled|bool and
+         nft_service_manage|bool and
+         ansible_service_mgr == 'openrc')
+  notify: ['Restart nftables openrc service']
 
 # Manage custom nftables service [[[1
 - name: Create Nftables custom directory for systemd service
@@ -211,6 +226,7 @@
     - nft_enabled|bool
     - nft_service_manage|bool
     - not nft__service_protect|bool
+    - ansible_service_mgr == 'systemd'
 
 - name: Add Nftables systemd custom configuration
   template:
@@ -224,6 +240,7 @@
     - nft_enabled|bool
     - nft_service_manage|bool
     - not nft__service_protect|bool
+    - ansible_service_mgr == 'systemd'
   notify: ['Restart nftables service']
 
 # Manage custom fail2ban service [[[1
@@ -235,6 +252,7 @@
   when:
     - nft_enabled|bool
     - nft_service_manage|bool
+    - ansible_service_mgr == 'systemd'
 
 - name: Install Debian Fail2Ban custom service
   template:
@@ -247,4 +265,5 @@
   when:
     - nft_enabled|bool
     - nft_service_manage|bool
+    - ansible_service_mgr == 'systemd'
   notify: ['Restart nftables service']
